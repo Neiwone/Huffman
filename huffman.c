@@ -138,13 +138,9 @@ int altura_arvore(No *raiz)
         int dir = altura_arvore(raiz->direita) + 1;
 
         if(esq > dir)
-        {
             return esq;
-        }
         else
-        {
             return dir;
-        }
     }
 }
 
@@ -155,9 +151,7 @@ char** aloca_dicionario(int colunas)
     dicionario = malloc(sizeof(char *) * TAM);
 
     for (int i = 0; i < TAM; i++)
-    {
         dicionario[i] = calloc(colunas, sizeof(char));
-    }
     
     return dicionario;
 }
@@ -167,10 +161,7 @@ void gerar_dicionario(char **dicionario, No *raiz, char *caminho, int colunas)
     char esquerda[colunas], direita[colunas];
     
     if(raiz->esquerda == NULL && raiz->direita == NULL)
-    {
         strcpy(dicionario[raiz->caracter], caminho);
-    }
-
     else
     {
         //salvando caminho atual
@@ -191,12 +182,8 @@ void gerar_dicionario(char **dicionario, No *raiz, char *caminho, int colunas)
 void imprimir_dicionario(char **dicionario)
 {
     for (int i = 0; i < TAM; i++)
-    {
         if(strlen(dicionario[i]) > 0)
-        {
             printf("\t%3c: %s\n", i, dicionario[i]);
-        }
-    }
 }
 
 int calcula_tamanho_texto(char **dicionario, FILE* arquivo)
@@ -206,9 +193,7 @@ int calcula_tamanho_texto(char **dicionario, FILE* arquivo)
     unsigned char byte;
 
     while (fread(&byte, sizeof(byte), 1, arquivo))
-    {
         tam = tam + strlen(dicionario[byte]);
-    }
 
     return tam;
 }
@@ -224,9 +209,7 @@ char* codificar(char **dicionario, FILE* arquivo)
     rewind(arquivo);
 
     while (fread(&byte, sizeof(byte), 1, arquivo))
-    {
         strcat(codigo, dicionario[byte]);
-    }
     
     return codigo;
 }
@@ -241,17 +224,12 @@ char* decodificar(char *codificado, No *raiz)
 
     int i = 0;
 
-    while (*(codificado + i) != '\0')
+    while (codificado[i] != '\0')
     {
-        if (*(codificado + i) == '0')
-        {
+        if (codificado[i] == '0')
             aux = aux->esquerda;
-        }
-
         else
-        {
             aux = aux->direita;
-        }
 
         if(aux->esquerda == NULL && aux->direita == NULL)
         {
@@ -299,9 +277,8 @@ void compactar(char *compactado)
         }
         
         if (j != 7)
-        {
             fwrite(&byte, sizeof(unsigned char), 1, saida);
-        }
+        
         fclose(saida);
     }
 
@@ -311,16 +288,16 @@ void compactar(char *compactado)
     }
 }
 
-unsigned int eh_bit_um(unsigned char byte, int i)
+unsigned int is_bit_i_set(unsigned char byte, int i)
 {
-    unsigned char mascara = (1 << i);
-    return byte & mascara;
+    unsigned char mask = (1 << i);
+    return byte & mask;
 }
 
 void descompactar(No *raiz)
 {
     FILE* entrada= fopen("compactado.huff", "rb");
-    FILE* saida = fopen("descompactado.jpg", "wb");
+    FILE* saida = fopen("descompactado.huff", "wb");
 
     No *aux = raiz;
     unsigned char byte;
@@ -337,7 +314,7 @@ void descompactar(No *raiz)
         {
             for (int i = 7; i >= 0; i--) // Iniciar de 7 (bit mais significativo) para 0
             {
-                if(eh_bit_um(byte, i))
+                if(is_bit_i_set(byte, i))
                 {
                     aux = aux->direita;
                 }
@@ -399,40 +376,45 @@ int main()
 
     if (arquivo)
     {
-      while (fread(&byte, sizeof(byte), 1, arquivo))
-      {
-        tabela_frequencia[byte]++;
-      }
-
-      fclose(arquivo);
+        while (fread(&byte, sizeof(byte), 1, arquivo))
+            tabela_frequencia[byte]++;
+        
+        fclose(arquivo);
     }
-
     else
-    {
         printf("Erro ao abrir o arquivo.\n");
-    }
 
+
+    // CRIAÇÃO LISTA DE FREQUENCIA
     criar_lista(&lista);
     preencher_lista(tabela_frequencia, &lista);
 
+    // MONTAGEM DA ÁRVORE DE HUFFMAN
     arvore = montar_arvore(&lista);
 
+    // CRIAÇÃO DO DICIONÁRIO BASEADO NA ÁRVORE
     int colunas = altura_arvore(arvore) + 1;
     dicionario = aloca_dicionario(colunas);
     gerar_dicionario(dicionario, arvore, "", colunas);
 
+    // CODIFICAÇÃO
     arquivo = fopen(nome_arquivo, "rb");
     codificado = codificar(dicionario, arquivo);
     fclose(arquivo);
 
+    // DECODIFICAÇÃO
     decodificado = decodificar(codificado, arvore);
 
+    // COMPACTAÇÃO
     compactar(codificado);
 
+    // DESCOMPACTAÇÃO
     printf("\nARQUIVO DESCOMPACTADO!\n");
     descompactar(arvore);
     printf("\n\n");
 
+
+    // LIBERAÇÃO DE MEMÓRIA ALOCADA DINAMICAMENTE
     free(codificado);
     free(decodificado);
     liberar_arvore(arvore);
