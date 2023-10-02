@@ -27,6 +27,15 @@ bool lista_vazia(Lista *lista)
     return (lista->inicio == NULL);
 }
 
+void frequencia_bytes(FILE *file, unsigned int tab[])
+{
+    unsigned char byte;
+    while(fread(&byte, sizeof(unsigned char), 1, file))
+        tab[byte]++;
+    
+    rewind(file);
+}
+
 void inserir_ordenado(Lista *lista, No *no)
 {
     No *aux;
@@ -357,7 +366,7 @@ void liberar_arvore(No *raiz)
 
 int main()
 {
-    FILE* arquivo;
+    FILE *arquivo;
 
     char nome_arquivo[TAM];
 
@@ -365,7 +374,6 @@ int main()
 
     arquivo = fopen(nome_arquivo, "rb");
 
-    unsigned char byte;
     unsigned int tabela_frequencia[TAM] = {0};
     char **dicionario;
     char *codificado, *decodificado;
@@ -374,13 +382,9 @@ int main()
 
     No *arvore;
 
+    // CRIAÇÃO DA TABELA DE FREQUENCIA
     if (arquivo)
-    {
-        while (fread(&byte, sizeof(byte), 1, arquivo))
-            tabela_frequencia[byte]++;
-        
-        fclose(arquivo);
-    }
+        frequencia_bytes(arquivo, tabela_frequencia);
     else
         printf("Erro ao abrir o arquivo.\n");
 
